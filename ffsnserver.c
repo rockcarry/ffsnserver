@@ -105,8 +105,7 @@ int main(int argc, char *argv[])
         }
 
         len = recv(fd_conn, buf, sizeof(buf) - 1, 0); buf[len] = '\0';
-        p   = strstr(buf, "GET /");
-        if (p) {
+        if ((p = strstr(buf, "GET /")) == buf) {
             p += 5; type = p;
             p = strstr(p, " HTTP");
             if (p) *p = '\0';
