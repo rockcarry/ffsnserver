@@ -18,10 +18,12 @@ ffsnserver.exe --port=8000
 
 
 以下的 url 地址用于获取 IP300B 的 SN
-http://localhost:8000/DPH-IP300B
+http://ip:port/DPH-IP300B
 
 以下的 url 地址用于获取 IP350 的 SN
-http://localhost:8000/DPH-IP350
+http://ip:port/DPH-IP350
+
+（ip 为服务器 ip 地址，port 为端口号，这里指定为了 8000）
 
 服务器会在程序目录生成 log 文件，保存每天的 SN 请求日志
 
