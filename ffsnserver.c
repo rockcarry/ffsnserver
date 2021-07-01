@@ -67,7 +67,7 @@ static void newsn(struct sockaddr_in *client, char *type, char *sn, int len)
 int main(int argc, char *argv[])
 {
     struct sockaddr_in server_addr;
-    int fd_sock = -1, port = FFHTTPD_SERVER_PORT, i;
+    int fd_sock = -1, port = FFHTTPD_SERVER_PORT, opt, i;
 
 #ifdef __WIN32__
     WSADATA wsaData;
@@ -84,37 +84,39 @@ int main(int argc, char *argv[])
     server_addr.sin_family      = AF_INET;
     server_addr.sin_port        = htons(port);
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    fd_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd_sock == -1) { printf("failed to open socket !\n"); fflush(stdout); goto done; }
-    if (bind(fd_sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) { printf("failed to bind !\n"); fflush(stdout); goto done; }
-    if (listen(fd_sock, FFHTTPD_MAX_CONNECTION) == -1) { printf("failed to listen !\n"); fflush(stdout); goto done; }
+    if ((fd_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) { printf("failed to open socket !\n"); goto done; }
+    if (bind(fd_sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) { printf("failed to bind !\n"); goto done; }
+    if (listen(fd_sock, FFHTTPD_MAX_CONNECTION) == -1) { printf("failed to listen !\n"); goto done; }
+
+//  opt = 1000; setsockopt(fd_sock, SOL_SOCKET, SO_SNDTIMEO , (char*)&opt, sizeof(opt));
+    opt = 1000; setsockopt(fd_sock, SOL_SOCKET, SO_RCVTIMEO , (char*)&opt, sizeof(opt));
+//  opt = 1;    setsockopt(fd_sock, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
 
     printf("ffsnserver is running ...\n");
     printf("listen on port: %d\n\n", port); fflush(stdout);
 
     while (1) {
         struct sockaddr_in client_addr;
-        int  addrlen, fd_conn, len;
-        char buf[1024], sn[32], *type = "unknown", *p;
+        char buf[1024], sn[32] = "ERROR", *type = "unknown", *p;
+        int  addrlen = sizeof(client_addr), fd_conn, len;
 
-        addrlen = sizeof(client_addr);
-        fd_conn = accept(fd_sock, (struct sockaddr*)&client_addr, &addrlen);
-        if (fd_conn == -1) {
+        if ((fd_conn = accept(fd_sock, (struct sockaddr*)&client_addr, &addrlen)) == -1) {
             printf("failed to accept !\n"); fflush(stdout);
             usleep(100 * 1000); continue;
         }
 
-        len = recv(fd_conn, buf, sizeof(buf) - 1, 0); buf[len] = '\0';
-        if ((p = strstr(buf, "GET /")) == buf) {
-            p += 5; type = p;
-            p = strstr(p, " HTTP");
-            if (p) *p = '\0';
-        }
+        if ((len = recv(fd_conn, buf, sizeof(buf) - 1, 0)) > 0) {
+            buf[len] = '\0';
+            if ((p = strstr(buf, "GET /")) == buf) {
+                p += 5; type = p;
+                p = strstr(p, " HTTP");
+                if (p) *p = '\0';
+            }
 
-        if (strcmp(type, "DPH-IP300B") == 0 || strcmp(type, "DPH-IP350") == 0) newsn(&client_addr, type, sn, sizeof(sn));
-        else strncpy(sn, "ERROR", sizeof(sn));
-        snprintf(buf, sizeof(buf), g_myweb_head, strlen(sn), sn);
-        send(fd_conn, buf, strlen(buf), 0);
+            if (strcmp(type, "DPH-IP300B") == 0 || strcmp(type, "DPH-IP350") == 0) newsn(&client_addr, type, sn, sizeof(sn));
+            len = snprintf(buf, sizeof(buf), g_myweb_head, strlen(sn), sn);
+            len = send(fd_conn, buf, len, 0);
+        }
         closesocket(fd_conn);
     }
 
