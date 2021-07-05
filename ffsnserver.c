@@ -42,7 +42,7 @@ static void newsn(struct sockaddr_in *client, char *type, char *sn, int len)
 
     snprintf(buffer, sizeof(buffer), "%s-%04d-%02d-%02d.log", type, tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday);
     if ((fp = fopen(buffer, "rb"))) { fscanf(fp, "%x", &next); fclose(fp); }
-    else { fp = fopen(buffer, "wb"); fclose(fp); }
+    else { fp = fopen(buffer, "wb"); if (fp) fclose(fp); }
 
     if (next <= 0x2001) next = 0x2001;
     if (next >= 0x4000) {
@@ -58,9 +58,8 @@ static void newsn(struct sockaddr_in *client, char *type, char *sn, int len)
         fseek(fp, 0, SEEK_END);
         snprintf(buffer, sizeof(buffer), "[%04d-%02d-%02d %02d:%02d:%02d] client %s request sn: %s\r\n",
             tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, inet_ntoa(client->sin_addr), sn);
-        fprintf(fp    , buffer);
+        fprintf(fp    , buffer); fclose(fp    );
         fprintf(stdout, buffer); fflush(stdout);
-        fclose (fp);
     } else printf("failed to open sn log file: %s !\n", buffer);
 }
 
