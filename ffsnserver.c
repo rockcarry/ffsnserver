@@ -1,5 +1,5 @@
-#include <stdio.h>  
-#include <stdlib.h>  
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -19,7 +19,7 @@
 #define FFHTTPD_SERVER_PORT     8080
 #define FFHTTPD_MAX_CONNECTION  1
 
-static char *g_myweb_head = 
+static char *g_myweb_head =
 "HTTP/1.1 200 OK\r\n"
 "Server: ffhttpd/1.0.0\r\n"
 "Content-Type: text/html\r\n"
