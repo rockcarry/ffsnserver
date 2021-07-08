@@ -6,11 +6,13 @@
 #ifdef __WIN32__
 #include <winsock2.h>
 #define usleep(n) Sleep((n) / 1000)
+#define socklen_t int
 #else
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #define  closesocket close
 #endif
 
@@ -58,8 +60,8 @@ static void newsn(struct sockaddr_in *client, char *type, char *sn, int len)
         fseek(fp, 0, SEEK_END);
         snprintf(buffer, sizeof(buffer), "[%04d-%02d-%02d %02d:%02d:%02d] client %s request sn: %s\r\n",
             tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, inet_ntoa(client->sin_addr), sn);
-        fprintf(fp    , buffer); fclose(fp    );
-        fprintf(stdout, buffer); fflush(stdout);
+        fprintf(fp    , "%s", buffer); fclose(fp    );
+        fprintf(stdout, "%s", buffer); fflush(stdout);
     } else printf("failed to open sn log file: %s !\n", buffer);
 }
 
@@ -99,7 +101,7 @@ int main(int argc, char *argv[])
         char buf[1024], sn[32] = "ERROR", *type = "unknown", *p;
         int  addrlen = sizeof(client_addr), fd_conn, len;
 
-        if ((fd_conn = accept(fd_sock, (struct sockaddr*)&client_addr, &addrlen)) == -1) {
+        if ((fd_conn = accept(fd_sock, (struct sockaddr*)&client_addr, (socklen_t*)&addrlen)) == -1) {
             printf("failed to accept !\n"); fflush(stdout);
             usleep(100 * 1000); continue;
         }
